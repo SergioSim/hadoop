@@ -10,3 +10,7 @@
 - Anagram detector
 - the input data is in ./input-data/common_words_en.txt
 
+### Step 3
+
+- update graph traversal
+- the input data is in ./input-data/graph_input.txt
