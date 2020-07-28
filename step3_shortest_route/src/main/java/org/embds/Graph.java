@@ -54,6 +54,9 @@ public class Graph {
 	public static class GraphReduce extends Reducer<Text, Text, Text, Text> {
 		
 		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+			Configuration conf = context.getConfiguration();
+			// When isShortest is true we compute the shortest route, else - the longest
+			boolean isShortest = conf.getBoolean("org.embds.shortest", false);
 			int max_depth = -1;
 			int min_depth = -1;
 			// When all nodes are gray or black, we have already the shortest route.
@@ -80,6 +83,7 @@ public class Graph {
 		      }
 		      if(depth == -2) continue;
 		      if(depth > max_depth) max_depth = depth;
+		      
 		      if(depth < min_depth || min_depth == -1) min_depth = depth;
 		      if(neighbours.length() > new_neighbours.length()) new_neighbours = neighbours;
 		      if(new_color.equals("") || (
@@ -90,7 +94,7 @@ public class Graph {
 		      }
 			}
 			
-			if(all_nodes_gray_or_black) max_depth = min_depth;
+			if(all_nodes_gray_or_black && isShortest) max_depth = min_depth;
 
 		    if(!new_color.equals("BLACK")) context.getCounter(Graph.GRAPH_COUNTERS.OUTPUT_NB_NONBLACK).increment(1);
 			context.write(key, new Text(new_neighbours+"|"+new_color+"|"+max_depth));
@@ -108,7 +112,12 @@ public class Graph {
 		String output_path = "";
 		int nb_step = 0;
 		long nb_nodes_non_black = 0;
-
+		
+		boolean isShortest = false;
+		if(ourArgs.length > 2 && ourArgs[2].equals("--shortest")) {
+			isShortest = true;
+		}
+		conf.setBoolean("org.embds.shortest", isShortest);
 		while(true) {
 			if(nb_step>0) {
 				input_path = output_path + "/part-r*";
